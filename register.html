@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<!---Coding By CodingLab | www.codinglabweb.com--->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Registration Form in HTML CSS</title>
+    <!---Custom CSS File--->
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <section class="container">
+      <header>Registration Form</header>
+      <form method="POST" class="form">
+        <div class="column">
+          <div class="input-box">
+            <label>First Name</label>
+            <input name="firstName" type="text" placeholder="ชื่อ" required />
+          </div>
+
+          <div class="input-box">
+            <label>Last Name</label>
+            <input name="lastName" type="text" placeholder="นามสกุล" required />
+          </div>
+        </div>
+
+        <div class="input-box">
+          <label>Email Address</label>
+          <input name="email" type="text" placeholder="อีเมล์" required />
+        </div>
+
+        <div class="column">
+          <div class="input-box">
+            <label>Phone Number</label>
+            <input name="phoneNumber" type="number" placeholder="เบอร์โทรศัพท์" required />
+          </div>
+          <div class="input-box">
+            <label>Birth Date</label>
+            <input name="birdDate" type="date" placeholder="Enter birth date" required />
+          </div>
+        </div>
+        <div class="gender-box">
+          <h3>เพช</h3>
+          <div class="gender-option">
+            <div class="gender">
+              <input type="radio" id="check-male" name="gender" value="ชาย" checked />
+              <label for="check-male">ชาย</label>
+            </div>
+            <div class="gender">
+              <input type="radio" id="check-female" name="gender" value="หญิง" />
+              <label for="check-female">หญิง</label>
+            </div>
+            <div class="gender">
+              <input type="radio" id="check-other" name="gender" value="ไม่ระบุ" />
+              <label for="check-other">ไม่ระบุ</label>
+            </div>
+          </div>
+        </div>
+        <div class="input-box address">
+          <label>Address</label>
+          <input name="address" type="text" placeholder="ที่อยู่" required />
+          <div class="column">
+            <input name="postalCode" type="number" placeholder="รหัสไปรษณีย์" required />
+          </div>
+          <div class="column">
+            <div class="select-box">
+              <select name="bank" >
+                <option hidden>ธนาคาร</option>
+                <!-- Big Six -->
+                <option>SCB – ธนาคารไทยพาณิชย์</option>
+                <option>KBank – ธนาคารกสิกรไทย</option>
+                <option>KTB – ธนาคารกรุงไทย</option>
+                <option>BBL – ธนาคารกรุงเทพ</option>
+                <option>TTB – ธนาคารทหารไทยธนชาต</option>
+                <option>BAY – ธนาคารกรุงศรีอยุธยา</option>
+
+                <!-- State / Special Institutions -->
+                <option>GSB – ธนาคารออมสิน</option>
+                <option>BAAC – ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร</option>
+                <option>GH Bank – ธนาคารอาคารสงเคราะห์</option>
+                <option>EXIM – ธนาคารเพื่อการส่งออกและนำเข้าแห่งประเทศไทย</option>
+                <option>SME Bank – ธนาคารพัฒนาวิสาหกิจขนาดกลางและขนาดย่อมแห่งประเทศไทย</option>
+                <option>iBank – ธนาคารอิสลามแห่งประเทศไทย</option>
+
+                <!-- Other Commercial Banks -->
+                <option>CIMB – ธนาคารซีไอเอ็มบีไทย</option>
+                <option>TISCO – ธนาคารทิสโก้</option>
+                <option>Kiatnakin – ธนาคารเกียรตินาคินภัทร</option>
+                <option>UOB – ธนาคารยูโอบี (ไทย)</option>
+                <option>SCBT – ธนาคารสแตนดาร์ดชาร์เตอร์ด (ไทย)</option>
+                <option>Thai Credit – ธนาคารไทยเครดิตเพื่อรายย่อย</option>
+                <option>LH Bank – ธนาคารแลนด์แอนด์เฮ้าส์</option>
+              </select>
+            </div>
+            <input name="accountNumber" type="number" placeholder="เลขบัญชี" required />
+          </div>
+        </div>
+        <button>Submit</button>
+      </form>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="js/register.js"></script>
+
+  </body>
+</html>
