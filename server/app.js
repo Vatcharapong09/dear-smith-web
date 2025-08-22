@@ -1,15 +1,37 @@
 const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors')
+const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 
-// อ่านค่าฟอร์ม
-app.use(cors()) // แก้การยิงหลาย env ผ่านเครื่องตัวเอง
+app.use(cors());
 app.use(express.json());
 
+// ✅ serve static (สำหรับไฟล์ css, js, html ฯลฯ)
+app.use(express.static(path.join(__dirname, '..')));
+
+// ✅ dynamic route สำหรับ .html
+app.get('/:page', (req, res, next) => {
+  const pageName = req.params.page;
+  const filePath = path.join(__dirname, '..', `${pageName}.html`);
+
+  // ถ้ามีไฟล์จริง → ส่งไฟล์กลับไป
+  if (fs.existsSync(filePath)) {
+    res.sendFile(filePath);
+  } else {
+    next(); // ถ้าไม่มีไฟล์ → ไป middleware อื่น (หรือ 404)
+  }
+});
+
+// ✅ default route → index.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'index.html'));
+});
+
+
 // POST form
-app.post('/submit', (req, res) => {
+app.post('/register', (req, res) => {
   const formData = {
     firstName: req.body.firstName,
     lastName: req.body.lastName,
@@ -25,12 +47,14 @@ app.post('/submit', (req, res) => {
 
   console.log('Form Data:', formData);
 
-  res.json({ 
-    message: 'Form submitted successfully', 
-    data: formData 
+  res.json({
+    message: 'Form submitted successfully',
+    data: formData
   });
 
 });
+
+
 
 
 // mock database (จริง ๆ ควรใช้ DB เช่น MongoDB, MySQL)
@@ -54,10 +78,94 @@ app.post("/share", (req, res) => {
 
   console.log('body:', req.body)
 
-  res.json({ 
-    success: true ,
+  res.json({
+    success: true,
     data: req.body
   })
+})
+
+// test get Tree
+app.get("/api/downline/:userId", (req, res) => {
+  console.log('API IN')
+  res.send(
+
+    {
+      "user_id": 1,
+      "name": "Somchai Dee",
+      "children": [
+        {
+          "user_id": 2,
+          "name": "Suda Jai",
+          "children": [
+            {
+              "user_id": 4,
+              "name": "Mali Rak",
+              "children": [
+                {
+                  "user_id": 7,
+                  "name": "Narin Pet",
+                  "children": []
+                },
+                {
+                  "user_id": 8,
+                  "name": "Kanya Mee",
+                  "children": [
+                    {
+                      "user_id": 12,
+                      "name": "Tida Yim",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "user_id": 5,
+              "name": "Prasert Chai",
+              "children": [
+                {
+                  "user_id": 9,
+                  "name": "Chaiya Lek",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "user_id": 3,
+          "name": "Anan Boon",
+          "children": [
+            {
+              "user_id": 6,
+              "name": "Krit Wong",
+              "children": [
+                {
+                  "user_id": 10,
+                  "name": "Somsak Jan",
+                  "children": [
+                    {
+                      "user_id": 13,
+                      "name": "Malee Orn",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "user_id": 11,
+              "name": "Korn Jai",
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+
+
+  )
+
 })
 
 

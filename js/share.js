@@ -1,6 +1,8 @@
 async function main() {
 
-    const YOUR_LIFF_ID = '2007882928-a6n8BlA9'
+    const YOUR_LIFF_ID_CENTER = '2007882928-a6n8BlA9'
+    const YOUR_LIFF_ID_SHARE = '2007882928-a6n8BlA9'
+    const YOUR_LIFF_ID_REGISTER = '2007882928-a6n8BlA9'
 
     await liff.init({ liffId: YOUR_LIFF_ID })
 

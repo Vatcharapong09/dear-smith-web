@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>Downline Tree</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- D3 v7 -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <!-- Axios -->
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#f8fafc;
+      --card:#ffffff;
+      --line:#e5e7eb;
+      --node:#111827;
+      --accent:#16a34a;      /* เขียวอ่อน สายกีฬา มินิมอล */
+      --accent-soft:#86efac; /* เขียวอ่อนมาก สำหรับ hover/selected */
+      --muted:#6b7280;
+    }
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:#111; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Prompt", sans-serif;
+      display:flex; align-items:center; justify-content:center; padding:16px;
+    }
+    .wrap{
+      width:100%; max-width:900px; background:var(--card); border:1px solid var(--line);
+      border-radius:16px; box-shadow:0 6px 20px rgba(0,0,0,0.06); padding:14px;
+    }
+    .header{
+      display:flex; align-items:center; justify-content:space-between; gap:12px; padding:6px 4px 12px;
+      border-bottom:1px dashed var(--line); margin-bottom:8px;
+    }
+    .title{ font-weight:700; font-size:1.05rem; color:var(--accent); letter-spacing:.2px;}
+    .controls{ display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+    .controls input, .controls button{
+      border:1px solid var(--line); border-radius:10px; padding:8px 10px; font-size:.95rem; background:#fff;
+    }
+    .controls button{
+      background:var(--accent); color:#fff; border:none; font-weight:600;
+    }
+    .controls button.secondary{
+      background:#fff; color:#111; border:1px solid var(--line); font-weight:500;
+    }
+
+    /* Canvas */
+    #chart{
+      width:100%; height:min(70vh, 650px); position:relative; overflow:auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    svg{ width:100%; height:100%; display:block; }
+
+    /* Links (edges) */
+    .link{
+      fill:none; stroke:var(--line); stroke-width:2px;
+    }
+
+    /* Nodes */
+    .node circle{
+      fill:#fff; stroke:var(--accent); stroke-width:2px;
+    }
+    .node:hover circle{
+      fill:var(--accent-soft);
+    }
+    .node text{
+      font-size:.92rem; fill:var(--node); dominant-baseline:middle;
+    }
+    .muted{ color:var(--muted); font-size:.85rem; }
+
+    /* Mobile tweaks */
+    @media (max-width:480px){
+      .title{ font-size:1rem }
+      .controls input{ width:120px }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="title">โครงสร้างสายงาน (Downline Tree)</div>
+      <div class="controls">
+        <input id="userIdInput" type="number" placeholder="Root User ID" value="1" />
+        <button id="loadBtn">โหลดข้อมูล</button>
+        <button id="expandBtn" class="secondary">กางทั้งหมด</button>
+        <button id="collapseBtn" class="secondary">พับทั้งหมด</button>
+      </div>
+    </div>
+    <div class="muted" style="padding:6px 4px 10px;">
+      แตะ/คลิก โหนดเพื่อพับ–กาง | ลาก–เลื่อนไปมาเพื่อดูทั้งต้นไม้
+    </div>
+    <div id="chart"></div>
+  </div>
+
+  <script>
+    const BASE_URL = "http://localhost:3000"; // เว้นว่างถ้าไฟล์นี้เสิร์ฟจากโดเมนเดียวกับ API (เช่น nginx proxy). ถ้าต่าง origin ให้ใส่ http://localhost:3000
+    const API_PATH = (userId) => `${BASE_URL}/api/downline/${userId}`;
+
+    // Fallback sample (กรณี API ล่ม/ยังไม่พร้อม)
+    const sample = {
+      "user_id": 1, "name": "Somchai Dee", "children": [
+        { "user_id": 2, "name": "Suda Jai", "children": [
+          { "user_id": 4, "name": "Mali Rak", "children": [] }
+        ]},
+        { "user_id": 3, "name": "Anan Boon", "children": [
+          { "user_id": 5, "name": "Krit Wong", "children": [] }
+        ]}
+      ]
+    };
+
+    const chartEl = document.getElementById("chart");
+    let svg, gLinks, gNodes, root, treeLayout, diagonal;
+    let allNodesFlat = []; // ไว้ใช้ expand/collapse ทั้งหมด
+
+    // สร้าง SVG + groups
+    function initChart(){
+      chartEl.innerHTML = "";
+      svg = d3.select("#chart").append("svg");
+      const g = svg.append("g").attr("transform", "translate(40,20)");
+      gLinks = g.append("g").attr("class","links");
+      gNodes = g.append("g").attr("class","nodes");
+
+      // Layout แนวนอน (x=ยืน, y=นอน)
+      treeLayout = d3.tree().nodeSize([56, 160]); // ช่องไฟแนวตั้ง, แนวนอน
+      diagonal = d3.linkHorizontal().x(d => d.y).y(d => d.x);
+
+      // ทำให้ zoom/drag ได้
+      svg.call(
+        d3.zoom().scaleExtent([0.5, 2]).on("zoom", (e) => {
+          g.attr("transform", e.transform);
+        })
+      );
+    }
+
+    // เปลี่ยน / อัปเดตภาพ
+    function update(source){
+      // สร้างโครงข้อมูล d3 hierarchy
+      root.x0 ??= 0; root.y0 ??= 0;
+      const nodes = root.descendants();
+      const links = root.links();
+
+      // คำนวณตำแหน่ง
+      treeLayout(root);
+
+      // ===== Links
+      const link = gLinks.selectAll("path.link").data(links, d => d.target.data.user_id);
+      link.enter().append("path")
+        .attr("class","link")
+        .attr("d", d => diagonal({source: {x: source.x0, y: source.y0}, target: {x: source.x0, y: source.y0}}))
+        .merge(link)
+        .transition().duration(300)
+        .attr("d", d => diagonal({source: d.source, target: d.target}));
+      link.exit().transition().duration(300)
+        .attr("d", d => diagonal({source: {x: source.x, y: source.y}, target: {x: source.x, y: source.y}}))
+        .remove();
+
+      // ===== Nodes
+      const node = gNodes.selectAll("g.node").data(nodes, d => d.data.user_id);
+
+      const nodeEnter = node.enter().append("g")
+        .attr("class","node")
+        .attr("transform", d => `translate(${source.y0},${source.x0})`)
+        .on("click", (_, d) => {
+          toggle(d);
+          update(d);
+        });
+
+      nodeEnter.append("circle").attr("r", 16);
+      nodeEnter.append("text")
+        .attr("dy", "0")
+        .attr("x", 24)
+        .text(d => d.data.name);
+
+      const nodeUpdate = nodeEnter.merge(node);
+      nodeUpdate.transition().duration(300)
+        .attr("transform", d => `translate(${d.y},${d.x})`);
+
+      const nodeExit = node.exit().transition().duration(300)
+        .attr("transform", d => `translate(${source.y},${source.x})`)
+        .remove();
+
+      // เก็บตำแหน่งเก่าไว้สำหรับ animation รอบถัดไป
+      nodes.forEach(d => { d.x0 = d.x; d.y0 = d.y; });
+
+      // ปรับขนาด svg ให้พอดีกับ content โดยประมาณ (เพิ่ม margin)
+      const bounds = gNodes.node().getBBox();
+      const pad = 100;
+      svg.attr("viewBox", `${Math.min(0,bounds.x)-pad} ${Math.min(0,bounds.y)-pad} ${Math.max(bounds.width+pad*2, chartEl.clientWidth)} ${Math.max(bounds.height+pad*2, chartEl.clientHeight)}`);
+    }
+
+    // พับ/กาง โหนด (เก็บ children ไว้ที่ _children)
+    function toggle(d){
+      if (d.children) {
+        d._children = d.children;
+        d.children = null;
+      } else {
+        d.children = d._children;
+        d._children = null;
+      }
+    }
+
+    // พับทั้งหมด (ยกเว้น root)
+    function collapseAll(){
+      allNodesFlat.forEach(n => {
+        if (n !== root) { n._children = n.children; n.children = null; }
+      });
+      update(root);
+    }
+
+    // กางทั้งหมด
+    function expandAll(){
+      allNodesFlat.forEach(n => {
+        if (n._children) { n.children = n._children; n._children = null; }
+      });
+      update(root);
+    }
+
+    // โหลดข้อมูลจาก API → วาดกราฟ
+    async function loadAndRender(userId){
+      initChart();
+      let data;
+      try{
+        const { data: resp } = await axios.get(API_PATH(userId));
+        data = resp && Object.keys(resp).length ? resp : sample;
+      }catch(e){
+        console.warn("API error, using sample data:", e?.message);
+        data = sample;
+      }
+
+      // สร้าง root hierarchy
+      root = d3.hierarchy(data);
+      root.x0 = 0; root.y0 = 0;
+
+      // เก็บ flat nodes ไว้ใช้งานปุ่มพับ/กาง
+      allNodesFlat = root.descendants();
+
+      // เริ่มต้น: พับเลเวลลึกกว่า 1 (เหลือลูกตรงของ root)
+      allNodesFlat.forEach(d => {
+        if (d.depth > 1 && d.children) { d._children = d.children; d.children = null; }
+      });
+
+      update(root);
+    }
+
+    // Events
+    document.getElementById("loadBtn").addEventListener("click", () => {
+      const id = parseInt(document.getElementById("userIdInput").value || "1", 10);
+      loadAndRender(id);
+    });
+    document.getElementById("expandBtn").addEventListener("click", expandAll);
+    document.getElementById("collapseBtn").addEventListener("click", collapseAll);
+
+    // เริ่มโหลด root = 1 ครั้งแรก
+    loadAndRender(1);
+  </script>
+</body>
+</html>
