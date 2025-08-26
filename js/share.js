@@ -7,7 +7,7 @@ async function main() {
     const YOUR_LIFF_ID_REGISTER = '2007882928-VWgW2jYN'
     const YOUR_LIFF_ID_DOWNLINE = '2007882928-dgJE2Kl4'
 
-    await liff.init({ liffId: YOUR_LIFF_ID })
+    await liff.init({ liffId: YOUR_LIFF_ID_REGISTER })
 
     if (!liff.isLoggedIn()) {
         liff.login()
