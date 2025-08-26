@@ -1,13 +1,14 @@
+const BASE_URL = 'https://dear-smith-web.onrender.com'
+//https://lin.ee/XIMgns7
+
+const YOUR_LIFF_ID_HOMEPAGE = '2007882928-Avj6QNZW'
+const YOUR_LIFF_ID_SHARE = '2007882928-a6n8BlA9'
+const YOUR_LIFF_ID_REGISTER = '2007882928-VWgW2jYN'
+const YOUR_LIFF_ID_DOWNLINE = '2007882928-dgJE2Kl4'
+
 async function main() {
 
-    const BASE_URL = 'https://dear-smith-web.onrender.com'
-
-    const YOUR_LIFF_ID_HOMEPAGE = '2007882928-Avj6QNZW'
-    const YOUR_LIFF_ID_SHARE = '2007882928-a6n8BlA9'
-    const YOUR_LIFF_ID_REGISTER = '2007882928-VWgW2jYN'
-    const YOUR_LIFF_ID_DOWNLINE = '2007882928-dgJE2Kl4'
-
-    await liff.init({ liffId: YOUR_LIFF_ID_REGISTER })
+    await liff.init({ liffId: YOUR_LIFF_ID_SHARE }) //หน้าหลักก่อน Login Line
 
     if (!liff.isLoggedIn()) {
         liff.login()
@@ -21,7 +22,7 @@ async function main() {
     // อ่านค่า referrer (ถ้ามี)
     const urlParams = new URLSearchParams(window.location.search)
     const referrer = urlParams.get("referrer") || null
-    console.log("UrlParams : " , urlParams)
+    console.log("UrlParams : ", urlParams)
 
     // ส่งข้อมูลเข้า backend ทุกครั้งที่มีคนเปิด
     try {
@@ -36,6 +37,7 @@ async function main() {
     // ปุ่มแชร์ลิงก์
     document.getElementById("shareBtn").addEventListener("click", async () => {
         const shareUrl = `https://liff.line.me/${YOUR_LIFF_ID_REGISTER}?referrer=${myUserId}`
+        // const shareUrl = `https://lin.ee/XIMgns7?referrer=${myUserId}`
 
         if (liff.isApiAvailable("shareTargetPicker")) {
             await liff.shareTargetPicker([
