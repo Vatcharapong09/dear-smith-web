@@ -1,4 +1,5 @@
-const BASE_URL = 'http://localhost:3000'
+// const BASE_URL = 'http://localhost:3000'
+const BASE_URL = 'https://dear-smith-web.onrender.com'
 
 const submitData = async () => {
     let firstNameDOM = document.querySelector('input[name=firstName]')
@@ -13,35 +14,38 @@ const submitData = async () => {
     let accountNumberDOM = document.querySelector('input[name=accountNumber]')
 
     let userData = {
-        // firstName: firstNameDOM.value,
-        // lastName: lastNameDOM.value,
-        // email: emailDOM.value,
-        // phoneNumber: phoneNumberDOM.value,
-        // birdDate: birdDateDOM.value,
-        // gender: genderDOM.value,
-        // address: addressDOM.value,
-        // postalCode: postalCodeDOM.value,
-        // bank: bankDOM.value,
-        // accountNumber: accountNumberDOM.value
+        firstName: firstNameDOM.value,
+        lastName: lastNameDOM.value,
+        email: emailDOM.value,
+        phoneNumber: phoneNumberDOM.value,
+        birdDate: birdDateDOM.value,
+        gender: genderDOM.value,
+        address: addressDOM.value,
+        postalCode: postalCodeDOM.value,
+        bank: bankDOM.value,
+        accountNumber: accountNumberDOM.value
 
         //Mock
-        firstName: 'วัชรพงศ์',
-        lastName: 'คงกับพันธ์',
-        email: 'deaw_baht@hotmail.com',
-        phoneNumber: '0909010457',
-        birdDate: '02-12-2525',
-        gender: 'ชาย',
-        address: 'บ้านตาลม 10 หมู่ 10',
-        postalCode: '45120',
-        bank: 'Kbank - กสิกรไทย',
-        accountNumber: '5692201215'
+        // firstName: 'วัชรพงศ์',
+        // lastName: 'คงกับพันธ์',
+        // email: 'deaw_baht@hotmail.com',
+        // phoneNumber: '0909010457',
+        // birdDate: '02-12-2525',
+        // gender: 'ชาย',
+        // address: 'บ้านตาลม 10 หมู่ 10',
+        // postalCode: '45120',
+        // bank: 'Kbank - กสิกรไทย',
+        // accountNumber: '5692201215'
     }
 
     console.log(userData)
 
-    const YOUR_LIFF_ID_CENTER = 'null'
+    // const BASE_URL = 'https://dear-smith-web.onrender.com'
+
+    const YOUR_LIFF_ID_HOMEPAGE = '2007882928-Avj6QNZW'
     const YOUR_LIFF_ID_SHARE = '2007882928-a6n8BlA9'
     const YOUR_LIFF_ID_REGISTER = '2007882928-VWgW2jYN'
+    const YOUR_LIFF_ID_DOWNLINE = '2007882928-dgJE2Kl4'
     //Login Line
     await liff.init({ liffId: YOUR_LIFF_ID_REGISTER })
 
@@ -66,7 +70,11 @@ const submitData = async () => {
         });
 
         console.log('Server response:', response.data);
-        alert('Form submitted successfully!' + 'Referrer : ' + referrer + 'MyUserId : '+ myUserId);
+        alert(  
+            'Form submitted successfully!\n' +
+            'คนแนะนำ Referrer  : ' + referrer + '\n' +
+            'คนถูกแนะนำ MyUserId : ' + myUserId
+        );
     } catch (error) {
         console.error('Error submitting form:', error);
         alert('Error submitting form');

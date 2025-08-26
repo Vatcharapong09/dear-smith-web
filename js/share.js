@@ -1,8 +1,11 @@
 async function main() {
 
-    const YOUR_LIFF_ID_CENTER = '2007882928-a6n8BlA9'
+    const BASE_URL = 'https://dear-smith-web.onrender.com'
+
+    const YOUR_LIFF_ID_HOMEPAGE = '2007882928-Avj6QNZW'
     const YOUR_LIFF_ID_SHARE = '2007882928-a6n8BlA9'
-    const YOUR_LIFF_ID_REGISTER = '2007882928-a6n8BlA9'
+    const YOUR_LIFF_ID_REGISTER = '2007882928-VWgW2jYN'
+    const YOUR_LIFF_ID_DOWNLINE = '2007882928-dgJE2Kl4'
 
     await liff.init({ liffId: YOUR_LIFF_ID })
 
@@ -22,7 +25,7 @@ async function main() {
 
     // ส่งข้อมูลเข้า backend ทุกครั้งที่มีคนเปิด
     try {
-        await axios.post("http://localhost:3000/share", {
+        await axios.post(`${BASE_URL}/share`, {
             userId: myUserId,
             referrer: referrer
         })
