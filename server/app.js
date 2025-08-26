@@ -55,8 +55,6 @@ app.post('/register', (req, res) => {
 });
 
 
-
-
 // mock database (จริง ๆ ควรใช้ DB เช่น MongoDB, MySQL)
 let users = []
 let referrals = []
@@ -167,8 +165,6 @@ app.get("/api/downline/:userId", (req, res) => {
   )
 
 })
-
-
 
 app.listen(3000, () => {
   console.log('Server running on http://localhost:3000');

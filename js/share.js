@@ -35,7 +35,7 @@ async function main() {
 
     // ปุ่มแชร์ลิงก์
     document.getElementById("shareBtn").addEventListener("click", async () => {
-        const shareUrl = `https://liff.line.me/${YOUR_LIFF_ID}?referrer=${myUserId}`
+        const shareUrl = `https://liff.line.me/${YOUR_LIFF_ID_REGISTER}?referrer=${myUserId}`
 
         if (liff.isApiAvailable("shareTargetPicker")) {
             await liff.shareTargetPicker([

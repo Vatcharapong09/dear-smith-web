@@ -1,7 +1,30 @@
 // const BASE_URL = 'http://localhost:3000'
 const BASE_URL = 'https://dear-smith-web.onrender.com'
+const YOUR_LIFF_ID_HOMEPAGE = '2007882928-Avj6QNZW'
+const YOUR_LIFF_ID_SHARE = '2007882928-a6n8BlA9'
+const YOUR_LIFF_ID_REGISTER = '2007882928-VWgW2jYN'
+const YOUR_LIFF_ID_DOWNLINE = '2007882928-dgJE2Kl4'
 
 const submitData = async () => {
+
+        //Login Line
+    await liff.init({ liffId: YOUR_LIFF_ID_REGISTER })
+
+    if (!liff.isLoggedIn()) {
+        liff.login()
+        return
+    }
+
+    const profile = await liff.getProfile()
+    const myUserId = profile.userId
+    // console.log("My UserId:", myUserId)
+
+    // อ่านค่า referrer (ถ้ามี)
+    const urlParams = new URLSearchParams(window.location.search)
+    const referrer = urlParams.get("referrer") || null
+    console.log("UrlParams : " , urlParams)
+
+
     let firstNameDOM = document.querySelector('input[name=firstName]')
     let lastNameDOM = document.querySelector('input[name=lastName]')
     let emailDOM = document.querySelector('input[name=email]')
@@ -23,45 +46,13 @@ const submitData = async () => {
         address: addressDOM.value,
         postalCode: postalCodeDOM.value,
         bank: bankDOM.value,
-        accountNumber: accountNumberDOM.value
+        accountNumber: accountNumberDOM.value,
 
-        //Mock
-        // firstName: 'วัชรพงศ์',
-        // lastName: 'คงกับพันธ์',
-        // email: 'deaw_baht@hotmail.com',
-        // phoneNumber: '0909010457',
-        // birdDate: '02-12-2525',
-        // gender: 'ชาย',
-        // address: 'บ้านตาลม 10 หมู่ 10',
-        // postalCode: '45120',
-        // bank: 'Kbank - กสิกรไทย',
-        // accountNumber: '5692201215'
+        myUserId: myUserId,
+        referrer: referrer
     }
 
     console.log(userData)
-
-    // const BASE_URL = 'https://dear-smith-web.onrender.com'
-
-    const YOUR_LIFF_ID_HOMEPAGE = '2007882928-Avj6QNZW'
-    const YOUR_LIFF_ID_SHARE = '2007882928-a6n8BlA9'
-    const YOUR_LIFF_ID_REGISTER = '2007882928-VWgW2jYN'
-    const YOUR_LIFF_ID_DOWNLINE = '2007882928-dgJE2Kl4'
-    //Login Line
-    await liff.init({ liffId: YOUR_LIFF_ID_REGISTER })
-
-    if (!liff.isLoggedIn()) {
-        liff.login()
-        return
-    }
-
-    const profile = await liff.getProfile()
-    const myUserId = profile.userId
-    // console.log("My UserId:", myUserId)
-
-    // อ่านค่า referrer (ถ้ามี)
-    const urlParams = new URLSearchParams(window.location.search)
-    const referrer = urlParams.get("referrer") || null
-    console.log("UrlParams : " , urlParams)
 
     try {
         // ส่ง POST ด้วย Axios
