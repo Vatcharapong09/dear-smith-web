@@ -12,7 +12,7 @@ app.use(express.json());
 
 // สร้าง connection pool
 const pool = mysql.createPool({
-  host: "https://d1fbf0412a8f.ngrok-free.app",
+  host: "0.tcp.ap.ngrok.io:15685",
   user: "root",
   password: "1234",
   database: "lineapp"
