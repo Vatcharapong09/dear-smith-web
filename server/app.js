@@ -2,11 +2,22 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const mysql = require("mysql2/promise");
+const { v4: uuidv4 } = require('uuid'); // สำหรับ gen token
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// สร้าง connection pool
+const pool = mysql.createPool({
+  host: "localhost",
+  user: "root",
+  password: "1234",
+  database: "lineapp"
+});
+
 
 // ✅ serve static (สำหรับไฟล์ css, js, html ฯลฯ)
 app.use(express.static(path.join(__dirname, '..')));
@@ -30,57 +41,147 @@ app.get('/', (req, res) => {
 });
 
 
-// POST form
-app.post('/register', (req, res) => {
-  const formData = {
-    firstName: req.body.firstName,
-    lastName: req.body.lastName,
-    email: req.body.email,
-    phoneNumber: req.body.phoneNumber,
-    birthDate: req.body.birdDate,
-    gender: req.body.gender,
-    address: req.body.address,
-    postalCode: req.body.postalCode,
-    bank: req.body.bank,
-    accountNumber: req.body.accountNumber
-  };
+// -------------------- REGISTER API --------------------
+app.post("/api/register", async (req, res) => {
+  const {
+    lineUserID,
+    firstName,
+    lastName,
+    email,
+    phoneNumber,
+    birdDate,
+    gender,
+    address,
+    postalCode,
+    bank,
+    accountNumber,
+    referrerLineID // <<--- เพิ่มมาจาก LIFF query param
+  } = req.body;
 
-  console.log('Form Data:', formData);
+  const conn = await pool.getConnection();
 
-  res.json({
-    message: 'Form submitted successfully',
-    data: formData
-  });
+  try {
+    await conn.beginTransaction();
 
+    // 1. Insert User B
+    const [result] = await conn.execute(
+      `INSERT INTO users 
+        (line_user_id, first_name, last_name, email, phone_number, birth_date, gender, address, postal_code, bank, account_number) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) 
+       ON DUPLICATE KEY UPDATE 
+         first_name=VALUES(first_name), 
+         last_name=VALUES(last_name),
+         email=VALUES(email)`,
+      [
+        lineUserID,
+        firstName,
+        lastName,
+        email,
+        phoneNumber,
+        birdDate,
+        gender,
+        address,
+        postalCode,
+        bank,
+        accountNumber
+      ]
+    );
+
+    // หา user_id ของ B
+    const [rowsB] = await conn.execute(
+      "SELECT user_id FROM users WHERE line_user_id = ?",
+      [lineUserID]
+    );
+    const refereeId = rowsB[0].user_id;
+
+    // 2. ถ้ามี referrer_line_id → insert referrals
+    if (referrerLineID) {
+      // หา user_id ของ A
+      const [rowsA] = await conn.execute(
+        "SELECT user_id FROM users WHERE line_user_id = ?",
+        [referrerLineID]
+      );
+
+      if (rowsA.length > 0) {
+        const referrerId = rowsA[0].user_id;
+
+        // ตรวจสอบว่า B ยังไม่ถูกผูก referral มาก่อน
+        const [check] = await conn.execute(
+          "SELECT * FROM referrals WHERE referee_id = ?",
+          [refereeId]
+        );
+
+        if (check.length === 0) {
+          await conn.execute(
+            "INSERT INTO referrals (referrer_id, referee_id) VALUES (?, ?)",
+            [referrerId, refereeId]
+          );
+        }
+      }
+    }
+
+    await conn.commit();
+    res.json({ success: true, userId: refereeId });
+  } catch (err) {
+    await conn.rollback();
+    console.error(err);
+    res.status(500).json({ error: "Register failed" });
+  } finally {
+    conn.release();
+  }
 });
 
 
-// mock database (จริง ๆ ควรใช้ DB เช่น MongoDB, MySQL)
-let users = []
-let referrals = []
+// // endpoint เมื่อ user เข้ามา
+// app.post("/share", (req, res) => {
+//   const { userId, referrerId } = req.body
 
-// endpoint เมื่อ user เข้ามา
-app.post("/share", (req, res) => {
-  const { userId, referrer } = req.body
+//   // บันทึก user (ถ้ายังไม่เคยบันทึก)
+//   if (!users.includes(userId)) {
+//     users.push(userId)
+//   }
 
-  // บันทึก user (ถ้ายังไม่เคยบันทึก)
-  if (!users.includes(userId)) {
-    users.push(userId)
+//   // ถ้ามี referrerId และ referrerId != user เอง
+//   if (referrerId && referrerId !== userId) {
+//     referrals.push({ newUser: userId, referrerId: referrerId })
+//     console.log(`🎉 ${referrerId} แนะนำเพื่อน ${userId}`)
+//   }
+
+//   console.log('body:', req.body)
+
+//   res.json({
+//     success: true,
+//     data: req.body
+//   })
+// })
+
+// OA จริงของคุณ (lin.ee)
+const OA_LINK = "https://lin.ee/XIMgns7";
+
+// ตัวเก็บชั่วคราว (ควรใช้ Redis หรือ DB จริงๆ)
+const referralCache = new Map();
+
+// STEP 1: User A แชร์ลิงก์ /invite?ref=LINE_USER_ID_A
+app.get('/invite', (req, res) => {
+  const referrerId = req.query.ref;
+  if (!referrerId) {
+    console.log('Missing ref parameter')
+    //return res.status(400).send('Missing ref parameter');
   }
 
-  // ถ้ามี referrer และ referrer != user เอง
-  if (referrer && referrer !== userId) {
-    referrals.push({ newUser: userId, referrer: referrer })
-    console.log(`🎉 ${referrer} แนะนำเพื่อน ${userId}`)
-  }
+  // gen token
+  const token = uuidv4();
 
-  console.log('body:', req.body)
+  // เก็บ mapping token -> referrerId
+  referralCache.set(token, {
+    referrerId,
+    createdAt: Date.now()
+  });
 
-  res.json({
-    success: true,
-    data: req.body
-  })
-})
+  // Redirect ไป OA (แนบ state=token)
+  const oaLink = `https://lin.ee/XIMgns7?state=${token}`;
+  res.redirect(oaLink);
+});
 
 // test get Tree
 app.get("/api/downline/:userId", (req, res) => {
