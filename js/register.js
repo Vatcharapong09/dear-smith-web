@@ -110,6 +110,18 @@ async function main() {
 document.querySelector('.form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
+    let firstNameDOM = document.querySelector('input[name=firstName]')
+    let lastNameDOM = document.querySelector('input[name=lastName]')
+    let emailDOM = document.querySelector('input[name=email]')
+    let phoneNumberDOM = document.querySelector('input[name=phoneNumber]')
+    let birdDateDOM = document.querySelector('input[name=birdDate]') 
+    let genderDOM = document.querySelector('input[name=gender]:checked') || {}
+    let addressDOM = document.querySelector('input[name=address]')
+    let postalCodeDOM = document.querySelector('input[name=postalCode]')
+    let bankDOM = document.querySelector('select[name=bank]')
+    let accountNumberDOM = document.querySelector('input[name=accountNumber]')
+
+
     let userData = {
         lineUserID: myUserId,
         referrerLineID: referrerLineId,
