@@ -142,7 +142,7 @@ document.querySelector('.form').addEventListener('submit', async (e) => {
         const res = await axios.post(`${BASE_URL}/api/register?ref=${referrerLineId || null} `, userData, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body)
+            body: JSON.stringify(userData)
         });
         const result = await res.json();
         if (result.success) {
