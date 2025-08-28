@@ -86,7 +86,7 @@ let referrerLineId = "";
 
 async function main() {
     // 1. Init LIFF
-    await liff.init({ liffId: "YOUR_LIFF_ID_REGISTER" });
+    await liff.init({ liffId: YOUR_LIFF_ID_REGISTER });
 
     // บังคับ Login
     if (!liff.isLoggedIn()) {
