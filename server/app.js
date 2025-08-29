@@ -2,21 +2,13 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const mysql = require("mysql2/promise");
 const { v4: uuidv4 } = require('uuid'); // สำหรับ gen token
+const pool = require("./db");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
-
-// สร้าง connection pool
-const pool = mysql.createPool({
-  host: "0.tcp.ap.ngrok.io:15685",
-  user: "root",
-  password: "1234",
-  database: "lineapp"
-});
 
 
 // ✅ serve static (สำหรับไฟล์ css, js, html ฯลฯ)
