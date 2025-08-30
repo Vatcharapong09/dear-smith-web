@@ -35,6 +35,8 @@ app.get('/', (req, res) => {
 
 // -------------------- REGISTER API --------------------
 app.post("/api/register", async (req, res) => {
+
+  console.log(req.body)
   const {
     lineUserID,
     firstName,
@@ -113,6 +115,7 @@ app.post("/api/register", async (req, res) => {
     }
 
     await conn.commit();
+    console.log({ success: true, userId: refereeId })
     res.json({ success: true, userId: refereeId });
   } catch (err) {
     await conn.rollback();
@@ -169,7 +172,8 @@ app.get('/invite', (req, res) => {
     referrerId,
     createdAt: Date.now()
   });
-
+  
+  console.log('Token : ' ,token)
   // Redirect ไป OA (แนบ state=token)
   const oaLink = `https://lin.ee/XIMgns7?state=${token}`;
   res.redirect(oaLink);

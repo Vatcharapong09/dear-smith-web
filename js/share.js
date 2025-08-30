@@ -1,3 +1,4 @@
+// const BASE_URL = 'http://localhost:3000'
 const BASE_URL = 'https://dear-smith-web.onrender.com'
 const OA_LINK = "https://lin.ee/XIMgns7";
 
