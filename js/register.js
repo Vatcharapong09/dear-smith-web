@@ -24,14 +24,14 @@ async function main() {
 
     // 3. Get referrer from query param
     const urlParams = new URLSearchParams(window.location.search);
-    // const token = urlParams.get("state") || null; // ถ้าไม่มี state = null
+    const token1 = urlParams.get("state") || null; // ถ้าไม่มี state = null
 
     const context = liff.getContext();
     console.log("LINE Context:", context);
 
     const token = context.state;  // <<=== ได้ token ตรงนี้
     console.log("Token from state:", token);
-    alert("Token from state:" + token);
+    alert("Token from state:" + token + "Token 1 : " + token1);
 
     console.log("My User ID:", myUserId);
     console.log("Token :", token);
