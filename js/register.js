@@ -24,10 +24,17 @@ async function main() {
 
     // 3. Get referrer from query param
     const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get("state") || null; // ถ้าไม่มี state = null
+    // const token = urlParams.get("state") || null; // ถ้าไม่มี state = null
+
+    const context = liff.getContext();
+    console.log("LINE Context:", context);
+
+    const token = context.state;  // <<=== ได้ token ตรงนี้
+    console.log("Token from state:", token);
+    alert("Token from state:", token);
 
     console.log("My User ID:", myUserId);
-    console.log("Referrer ID:", referrerLineId);
+    console.log("Token :", token);
 
     // 4. Handle form submit
     document.querySelector('.form').addEventListener('submit', async (e) => {
