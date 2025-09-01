@@ -31,7 +31,7 @@ async function main() {
 
     const token = context.state;  // <<=== ได้ token ตรงนี้
     console.log("Token from state:", token);
-    alert("Token from state:", token);
+    alert("Token from state:" + token);
 
     console.log("My User ID:", myUserId);
     console.log("Token :", token);

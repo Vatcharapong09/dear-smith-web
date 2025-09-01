@@ -174,6 +174,7 @@ app.get('/invite', (req, res) => {
     ? `${OA_LINK}?state=${token}`
     : `${OA_LINK}`;
 
+  console.log('OA Link : ', oaLink)
   res.redirect(oaLink);
 });
 
