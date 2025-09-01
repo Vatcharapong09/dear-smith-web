@@ -48,9 +48,7 @@ app.post("/api/register", async (req, res) => {
     address,
     postalCode,
     bank,
-    accountNumber,
-    referrerLineID, // <<--- เพิ่มมาจาก LIFF query param
-    token
+    accountNumber
   } = req.body;
 
   const conn = await pool.getConnection();
@@ -59,14 +57,6 @@ app.post("/api/register", async (req, res) => {
 
     if (!lineUserID) {
       return res.status(400).json({ success: false, error: "Missing lineUserId" });
-    }
-
-    // ตรวจสอบ referrer จาก token
-    let referrerId = null;
-    if (token && referralCache.has(token)) {
-      const refData = referralCache.get(token);
-      referrerId = refData.referrerId;
-      referralCache.delete(token); // ใช้แล้วลบออก (ป้องกัน reuse)
     }
 
     await conn.beginTransaction();
@@ -102,37 +92,42 @@ app.post("/api/register", async (req, res) => {
     );
     const refereeId = rowsB[0].user_id;
 
-    // 2. ถ้ามี referrer_line_id → insert referrals
-    if (referrerId) {
-      // หา user_id ของ A
-      const [rowsA] = await conn.execute(
+    // 3. เช็ค pending referral ของ B
+    const [pendingRows] = await conn.execute(
+      "SELECT id, referrer_line_id FROM referral_pending WHERE referee_line_id IS NULL ORDER BY created_at DESC LIMIT 1"
+    );
+
+    if (pendingRows.length > 0) {
+      const { id: pendingId, referrer_line_id } = pendingRows[0];
+
+      // 3a. หา user_id ของ referrer
+      const [refRows] = await conn.execute(
         "SELECT user_id FROM users WHERE line_user_id = ?",
-        [referrerId]
+        [referrer_line_id]
       );
 
-      if (rowsA.length > 0) {
-        const referrerId = rowsA[0].user_id;
+      if (refRows.length > 0) {
+        const referrerId = refRows[0].user_id;
 
-        // ตรวจสอบว่า B ยังไม่ถูกผูก referral มาก่อน
-        const [check] = await conn.execute(
-          "SELECT * FROM referrals WHERE referee_id = ?",
-          [refereeId]
+        // 3b. Insert ลง referrals (ถ้ายังไม่เคยมี)
+        await conn.execute(
+          "INSERT IGNORE INTO referrals (referrer_id, referee_id) VALUES (?, ?)",
+          [referrerId, refereeId]
         );
 
-        if (check.length === 0) {
-          await conn.execute(
-            "INSERT INTO referrals (referrer_id, referee_id) VALUES (?, ?)",
-            [referrerId, refereeId]
-          );
-          console.log(`🎁 บันทึก referrals: ${referrerId} → ${lineUserID}`);
-          console.log(`🎁 บันทึก referrals: ${rowsA[0].firstName} → ${rowsB[0].firstName}`);
-        }
+        // 3c. Update pending ให้รู้ว่า B เป็น referee
+        await conn.execute(
+          "UPDATE referral_pending SET referee_line_id = ? WHERE id = ?",
+          [lineUserID, pendingId]
+        );
+
+        console.log(`🎁 Referral confirmed: ${referrerId} → ${refereeId}`);
       }
     }
 
     await conn.commit();
-    console.log({ success: true, userId: refereeId , message: "สมัครสมาชิกสำเร็จ"})
-    res.json({ success: true, userId: refereeId , message: "สมัครสมาชิกสำเร็จ"});
+    res.json({ success: true, userId: refereeId, message: "สมัครสมาชิกสำเร็จ" });
+
   } catch (err) {
     await conn.rollback();
     console.error(err);
@@ -147,36 +142,34 @@ app.post("/api/register", async (req, res) => {
 // OA จริงของคุณ (lin.ee)
 const OA_LINK = "https://lin.ee/XIMgns7";
 
-// ตัวเก็บชั่วคราว (ควรใช้ Redis หรือ DB จริงๆ)
-const referralCache = new Map();
-
 // STEP 1: User A แชร์ลิงก์ /invite?ref=LINE_USER_ID_A
-app.get('/invite', (req, res) => {
-  const referrerId = req.query.ref;
-  if (!referrerId) {
-    console.log('Missing ref parameter (สมัครเองไม่ผ่าน ref)');
+app.get('/invite', async (req, res) => {
+  const referrerLineId = req.query.ref; // User A
+  if (!referrerLineId) {
+    return res.redirect(OA_LINK); // ไม่มี ref → redirect ปกติ
   }
 
-  // gen token
-  const token = uuidv4();
+  const conn = await pool.getConnection();
+  try {
+    // บันทึก pending referral (ยังไม่รู้ referee)
+    await conn.execute(
+      `INSERT INTO referral_pending (referrer_line_id, referee_line_id)
+             VALUES (?, NULL)`,
+      [referrerLineId]
+    );
 
-  // ถ้ามี referrerId → เก็บ mapping token -> referrerId
-  if (referrerId) {
-    referralCache.set(token, {
-      referrerId,
-      createdAt: Date.now()
-    });
-    console.log(`📌 Referral Cache [${token}] => ${referrerId}`);
+    console.log(`📌 Pending referral saved: ${referrerLineId} → (waiting referee)`);
+
+  } catch (err) {
+    console.error("Invite error:", err);
+  } finally {
+    conn.release();
   }
 
-  // Redirect ไป OA (แนบ state=token ถ้ามี)
-  const oaLink = referrerId
-    ? `${OA_LINK}?state=${token}`
-    : `${OA_LINK}`;
-
-  console.log('OA Link : ', oaLink)
-  res.redirect(oaLink);
+  // redirect ไป OA จริง
+  res.redirect(OA_LINK);
 });
+
 
 
 // test get Tree
