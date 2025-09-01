@@ -7,54 +7,6 @@ const YOUR_LIFF_ID_SHARE = '2007882928-a6n8BlA9'
 const YOUR_LIFF_ID_REGISTER = '2007882928-VWgW2jYN'
 const YOUR_LIFF_ID_DOWNLINE = '2007882928-dgJE2Kl4'
 
-// async function main() {
-
-//     await liff.init({ liffId: YOUR_LIFF_ID_SHARE }) //หน้าหลักก่อน Login Line
-
-//     if (!liff.isLoggedIn()) {
-//         liff.login()
-//         return
-//     }
-
-//     const profile = await liff.getProfile()
-//     const myUserId = profile.userId
-//     console.log("My UserId:", myUserId)
-
-//     // อ่านค่า referrer (ถ้ามี)
-//     const urlParams = new URLSearchParams(window.location.search)
-//     const referrerId = urlParams.get("ref") || null
-//     console.log("referrerId : ", referrerId)
-
-//     // ส่งข้อมูลเข้า backend ทุกครั้งที่มีคนเปิด
-//     try {
-//         await axios.post(`${BASE_URL}/share`, {
-//             userId: myUserId,
-//             referrerId: referrerId
-//         })
-//     } catch (err) {
-//         console.error("Error join:", err)
-//     }
-
-//     // ปุ่มแชร์ลิงก์
-//     document.getElementById("shareBtn").addEventListener("click", async () => {
-//         // const shareUrl = `https://liff.line.me/${YOUR_LIFF_ID_REGISTER}?referrer=${myUserId}`
-//         // const shareUrl = `https://lin.ee/XIMgns7?ref=${myUserId}`
-//         const shareUrl = `${BASE_URL}/invite?ref=${myUserId}`
-
-//         if (liff.isApiAvailable("shareTargetPicker")) {
-//             await liff.shareTargetPicker([
-//                 {
-//                     type: "text",
-//                     text: `มาลองเข้าห้อง Host ด้วยกันนะ 👉 ${shareUrl}`
-//                 }
-//             ])
-//         } else {
-//             alert("ไม่รองรับการแชร์บนอุปกรณ์นี้")
-//         }
-//     })
-// }
-
-
 async function main() {
     await liff.init({ liffId: YOUR_LIFF_ID_SHARE });
 
