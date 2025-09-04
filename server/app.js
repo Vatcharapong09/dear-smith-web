@@ -182,90 +182,138 @@ app.get('/invite', async (req, res) => {
 });
 
 
+// API ดึง downline tree
+app.get("/api/downline/:userId", async (req, res) => {
 
-// test get Tree
-app.get("/api/downline/:userId", (req, res) => {
-  console.log('API IN')
-  res.send(
+  console.log(req.params.userId + "Get Downline")
+  const { userId } = req.params;
 
-    {
-      "user_id": 1,
-      "name": "Somchai Dee",
-      "children": [
-        {
-          "user_id": 2,
-          "name": "Suda Jai",
-          "children": [
-            {
-              "user_id": 4,
-              "name": "Mali Rak",
-              "children": [
-                {
-                  "user_id": 7,
-                  "name": "Narin Pet",
-                  "children": []
-                },
-                {
-                  "user_id": 8,
-                  "name": "Kanya Mee",
-                  "children": [
-                    {
-                      "user_id": 12,
-                      "name": "Tida Yim",
-                      "children": []
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "user_id": 5,
-              "name": "Prasert Chai",
-              "children": [
-                {
-                  "user_id": 9,
-                  "name": "Chaiya Lek",
-                  "children": []
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "user_id": 3,
-          "name": "Anan Boon",
-          "children": [
-            {
-              "user_id": 6,
-              "name": "Krit Wong",
-              "children": [
-                {
-                  "user_id": 10,
-                  "name": "Somsak Jan",
-                  "children": [
-                    {
-                      "user_id": 13,
-                      "name": "Malee Orn",
-                      "children": []
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "user_id": 11,
-              "name": "Korn Jai",
-              "children": []
-            }
-          ]
-        }
-      ]
+  try {
+    const [rows] = await pool.query(
+      `
+      WITH RECURSIVE referral_tree AS (
+          SELECT 
+              u.user_id,
+              u.first_name,
+              u.last_name,
+              0 AS parent_id,
+              0 AS level
+          FROM users u
+          WHERE u.user_id = ?
+
+          UNION ALL
+
+          SELECT 
+              u.user_id,
+              u.first_name,
+              u.last_name,
+              r.referrer_id AS parent_id,
+              rt.level + 1
+          FROM referrals r
+          JOIN users u ON r.referee_id = u.user_id
+          JOIN referral_tree rt ON r.referrer_id = rt.user_id
+      )
+      SELECT * FROM referral_tree;
+      `,
+      [userId]
+    );
+
+    // แปลง rows → Tree JSON
+    const buildTree = (nodes, parentId = 0) =>
+      nodes
+        .filter(n => n.parent_id === parentId)
+        .map(n => ({
+          user_id: n.user_id,
+          name: `${n.first_name} ${n.last_name}`,
+          children: buildTree(nodes, n.user_id)
+        }));
+
+    const tree = buildTree(rows, 0);
+    console.log(rows[0])
+    res.json(tree[0]); // root
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+
+
+// API สร้าง Order ใหม่
+app.post("/create", async (req, res) => {
+  const connection = await pool.getConnection();
+  try {
+    const { user_id, items } = req.body;
+    // items = [{ product_id: 1, quantity: 2 }, ...]
+
+    await connection.beginTransaction();
+
+    // 1) รวมราคาสินค้า
+    const [products] = await connection.query(
+      "SELECT product_id, price FROM products WHERE product_id IN (?)",
+      [items.map(i => i.product_id)]
+    );
+
+    let totalAmount = 0;
+    items.forEach(item => {
+      const p = products.find(pr => pr.product_id === item.product_id);
+      totalAmount += p.price * item.quantity;
+    });
+
+    // 2) Insert orders
+    const [orderResult] = await connection.query(
+      "INSERT INTO orders (user_id, total_amount, status) VALUES (?, ?, ?)",
+      [user_id, totalAmount, "PAID"]
+    );
+    const orderId = orderResult.insertId;
+
+    // 3) Insert order_items
+    for (const item of items) {
+      await connection.query(
+        "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)",
+        [orderId, item.product_id, item.quantity, products.find(p => p.product_id === item.product_id).price]
+      );
     }
 
+    // 4) ตรวจสอบว่า user_id มี referrer มั้ย
+    const [refRow] = await connection.query(
+      "SELECT referrer_id FROM referrals WHERE referee_id = ?",
+      [user_id]
+    );
 
-  )
+    if (refRow.length > 0) {
+      const referrerId = refRow[0].referrer_id;
+      const rewardAmount = totalAmount * 0.10; // 10% ค่าคอม
 
-})
+      // 5) Insert ลง referral_rewards
+      await connection.query(
+        "INSERT INTO referral_rewards (referrer_id, referred_id, order_id, reward_amount) VALUES (?, ?, ?, ?)",
+        [referrerId, user_id, orderId, rewardAmount]
+      );
+    }
+
+    await connection.commit();
+    res.json({ message: "Order created successfully", orderId, totalAmount });
+  } catch (err) {
+    await connection.rollback();
+    console.error(err);
+    res.status(500).json({ error: "Failed to create order" });
+  } finally {
+    connection.release();
+  }
+  
+  // ตัวอย่าง Order จากหน้าบ้าน
+  // {
+  //   user_id: 2,   // คนที่สั่งซื้อ (Downline)
+  //   items: [
+  //     { product_id: 1, quantity: 2 },
+  //     { product_id: 3, quantity: 1 }
+  //   ]
+  // }
+
+});
+
+
 
 app.listen(3000, () => {
   console.log('Server running on http://localhost:3000');
