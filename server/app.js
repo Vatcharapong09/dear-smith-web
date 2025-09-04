@@ -131,12 +131,12 @@ app.post("/api/register", async (req, res) => {
     }
 
     await conn.commit();
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       userId: refereeId,
       referrerName: referrerName,
       refereeName: refereeName,
-      message: "สมัครสมาชิกสำเร็จ" 
+      message: "สมัครสมาชิกสำเร็จ"
     });
 
   } catch (err) {
@@ -301,14 +301,16 @@ app.post("/create", async (req, res) => {
   } finally {
     connection.release();
   }
-  
+
   // ตัวอย่าง Order จากหน้าบ้าน
   // {
-  //   user_id: 2,   // คนที่สั่งซื้อ (Downline)
-  //   items: [
-  //     { product_id: 1, quantity: 2 },
-  //     { product_id: 3, quantity: 1 }
-  //   ]
+  //   "user_id": 2,
+  //   "shipping_address": "123 หมู่บ้าน ABC ถนน XYZ กรุงเทพฯ",
+  //   "postal_code": "10240",
+  //     "items": [
+  //       { "product_id": 1, "quantity": 1 },
+  //         { "product_id": 3, "quantity": 2 }
+  //     ]
   // }
 
 });
