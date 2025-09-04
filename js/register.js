@@ -22,20 +22,6 @@ async function main() {
     const profile = await liff.getProfile();
     myUserId = profile.userId;
 
-    // 3. Get referrer from query param
-    const urlParams = new URLSearchParams(window.location.search);
-    const token1 = urlParams.get("state") || null; // ถ้าไม่มี state = null
-
-    const context = liff.getContext();
-    console.log("LINE Context:", context);
-
-    const token = context.state;  // <<=== ได้ token ตรงนี้
-    console.log("Token from state:", token);
-    alert("Token from state:" + token + "Token 1 : " + token1);
-
-    console.log("My User ID:", myUserId);
-    console.log("Token :", token);
-
     // 4. Handle form submit
     document.querySelector('.form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -65,8 +51,7 @@ async function main() {
             address: addressDOM.value,
             postalCode: postalCodeDOM.value,
             bank: bankDOM.value,
-            accountNumber: accountNumberDOM.value,
-            token
+            accountNumber: accountNumberDOM.value
         }
 
         try {
@@ -75,7 +60,11 @@ async function main() {
             });
             const result = res.data;
             if (result.success) {
-                alert("สมัครสมาชิกสำเร็จ!");
+                if(result.referrerName){
+                    alert("สมัครสมาชิกสำเร็จ!/n" + result.referrerName + "แนะนำ" + result.refereeName + "สมัครสมาชิกสำเร็จ!")
+                } else {
+                    alert("สมัครสมาชิกสำเร็จ!");
+                }
             } else {
                 alert("สมัครไม่สำเร็จ: " + JSON.stringify(result));
             }

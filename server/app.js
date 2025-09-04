@@ -85,12 +85,16 @@ app.post("/api/register", async (req, res) => {
       ]
     );
 
+    let referrerName = null;
+    let refereeName = null;
+
     // หา user_id ของ B
     const [rowsB] = await conn.execute(
       "SELECT user_id FROM users WHERE line_user_id = ?",
       [lineUserID]
     );
     const refereeId = rowsB[0].user_id;
+    refereeName = rowsB[0].firstName
 
     // 3. เช็ค pending referral ของ B
     const [pendingRows] = await conn.execute(
@@ -108,6 +112,7 @@ app.post("/api/register", async (req, res) => {
 
       if (refRows.length > 0) {
         const referrerId = refRows[0].user_id;
+        referrerName = refRows[0].firstName;
 
         // 3b. Insert ลง referrals (ถ้ายังไม่เคยมี)
         await conn.execute(
@@ -126,7 +131,13 @@ app.post("/api/register", async (req, res) => {
     }
 
     await conn.commit();
-    res.json({ success: true, userId: refereeId, message: "สมัครสมาชิกสำเร็จ" });
+    res.json({ 
+      success: true, 
+      userId: refereeId,
+      referrerName: referrerName,
+      refereeName: refereeName,
+      message: "สมัครสมาชิกสำเร็จ" 
+    });
 
   } catch (err) {
     await conn.rollback();
