@@ -90,11 +90,11 @@ app.post("/api/register", async (req, res) => {
 
     // หา user_id ของ B
     const [rowsB] = await conn.execute(
-      "SELECT user_id FROM users WHERE line_user_id = ?",
+      "SELECT user_id, first_name FROM users WHERE line_user_id = ?",
       [lineUserID]
     );
     const refereeId = rowsB[0].user_id;
-    refereeName = rowsB[0].firstName
+    refereeName = rowsB[0].first_name;
 
     // 3. เช็ค pending referral ของ B
     const [pendingRows] = await conn.execute(
@@ -106,13 +106,13 @@ app.post("/api/register", async (req, res) => {
 
       // 3a. หา user_id ของ referrer
       const [refRows] = await conn.execute(
-        "SELECT user_id FROM users WHERE line_user_id = ?",
+        "SELECT user_id, first_name FROM users WHERE line_user_id = ?",
         [referrer_line_id]
       );
 
       if (refRows.length > 0) {
         const referrerId = refRows[0].user_id;
-        referrerName = refRows[0].firstName;
+        referrerName = refRows[0].first_name;
 
         // 3b. Insert ลง referrals (ถ้ายังไม่เคยมี)
         await conn.execute(
@@ -185,7 +185,7 @@ app.get('/invite', async (req, res) => {
 // API ดึง downline tree
 app.get("/api/downline/:userId", async (req, res) => {
 
-  console.log(req.params.userId + "Get Downline")
+  console.log("Get Downline User : " + req.params.userId)
   const { userId } = req.params;
 
   try {
@@ -229,7 +229,8 @@ app.get("/api/downline/:userId", async (req, res) => {
         }));
 
     const tree = buildTree(rows, 0);
-    console.log(rows[0])
+    
+    console.log(tree[0])
     res.json(tree[0]); // root
   } catch (err) {
     console.error(err);
