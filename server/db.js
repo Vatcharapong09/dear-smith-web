@@ -3,7 +3,7 @@ const mysql = require("mysql2/promise");
 // สร้าง connection pool
 const pool = mysql.createPool({
   host: "0.tcp.ap.ngrok.io",   // Host จาก ngrok
-  port: 13121,                 // Port จาก ngrok
+  port: 19061,                 // Port จาก ngrok
   user: "root",                // user MySQL
   password: "1234",   // password MySQL
   database: "lineapp",         // DB ที่สร้างไว้
