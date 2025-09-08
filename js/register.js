@@ -60,8 +60,11 @@ async function main() {
             });
             const result = res.data;
             if (result.success) {
-                if(result.referrerName){
-                    alert("สมัครสมาชิกสำเร็จ!/n" + result.referrerName + "แนะนำ" + result.refereeName + "สมัครสมาชิกสำเร็จ!")
+                if (result.referrerName) {
+                    alert(
+                        "สมัครสมาชิกสำเร็จ!\n" +
+                        result.referrerName + " แนะนำ " + result.refereeName + " สมัครสมาชิกสำเร็จ!"
+                    );
                 } else {
                     alert("สมัครสมาชิกสำเร็จ!");
                 }
